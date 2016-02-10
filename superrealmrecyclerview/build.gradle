@@ -24,4 +24,6 @@ dependencies {
     compile 'com.android.support:appcompat-v7:23.1.1'
     //realm database
     compile 'io.realm:realm-android:0.87.4'
+    //recyclerview
+    compile 'com.android.support:recyclerview-v7:23.1.1'
 }

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="super_realm_recycler_view">
+        <attr name="realm_layout_empty" format="reference" />
+        <attr name="realm_layout_moreProgress" format="reference" />
+        <attr name="realm_layout_progress" format="reference" />
+        <attr name="realm_recyclerClipToPadding" format="boolean" />
+        <attr name="realm_recyclerPadding" format="dimension" />
+        <attr name="realm_recyclerPaddingTop" format="dimension" />
+        <attr name="realm_recyclerPaddingBottom" format="dimension" />
+        <attr name="realm_recyclerPaddingLeft" format="dimension" />
+        <attr name="realm_recyclerPaddingRight" format="dimension" />
+        <attr name="realm_scrollbarStyle">
+            <flag name="insideOverlay" value="0x0" />
+            <flag name="insideInset" value="0x01000000" />
+            <flag name="outsideOverlay" value="0x02000000" />
+            <flag name="outsideInset" value="0x03000000" />
+        </attr>
+
+        <attr name="realm_mainLayoutId" format="reference" />
+    </declare-styleable>
+</resources>
