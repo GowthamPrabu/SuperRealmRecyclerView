@@ -15,6 +15,7 @@ import android.view.ViewStub;
 import android.widget.FrameLayout;
 
 import com.tortelabs.superrealmrecyclerview.R;
+import com.tortelabs.superrealmrecyclerview.adapter.RealmRecyclerViewAdapter;
 
 /**
  * Created by gowtham on 10/02/16.
@@ -100,7 +101,7 @@ public class SuperRealmRecyclerView extends FrameLayout {
         mMoreProgress.setLayoutResource(mMoreProgressId);
         if (mMoreProgressId != 0)
             mMoreProgressView = mMoreProgress.inflate();
-        mMoreProgress.setVisibility(View.GONE);
+        hideMoreProgress();
 
         mEmpty = (ViewStub) v.findViewById(R.id.empty);
         mEmpty.setLayoutResource(mEmptyId);
@@ -128,7 +129,6 @@ public class SuperRealmRecyclerView extends FrameLayout {
 
         mRecycler.setClipToPadding(mClipToPadding);
         RecyclerView.OnScrollListener mInternalOnScrollListener = new RecyclerView.OnScrollListener() {
-            private int[] lastPositions;
 
             @Override
             public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
@@ -164,8 +164,8 @@ public class SuperRealmRecyclerView extends FrameLayout {
 
                     isLoadingMore = true;
                     if (mOnMoreListener != null) {
-                        mMoreProgress.setVisibility(View.VISIBLE);
-                        mOnMoreListener.onMoreAsked(mRecycler.getAdapter().getItemCount(), ITEM_LEFT_TO_LOAD_MORE, lastVisibleItemPosition);
+                        showMoreProgress();
+                        mOnMoreListener.onMoreAsked(((RealmRecyclerViewAdapter)mRecycler.getAdapter()).getRealmItemCount(), ITEM_LEFT_TO_LOAD_MORE, lastVisibleItemPosition);
 
                     }
                 }
@@ -223,7 +223,6 @@ public class SuperRealmRecyclerView extends FrameLayout {
 
     public void showMoreProgress() {
         mMoreProgress.setVisibility(View.VISIBLE);
-
     }
 
     public void hideMoreProgress() {
@@ -263,8 +262,8 @@ public class SuperRealmRecyclerView extends FrameLayout {
         mRecycler.removeOnItemTouchListener(listener);
     }
 
-    public RecyclerView.Adapter getAdapter() {
-        return mRecycler.getAdapter();
+    public RealmRecyclerViewAdapter getAdapter() {
+        return (RealmRecyclerViewAdapter) mRecycler.getAdapter();
     }
 
     /**
@@ -275,7 +274,13 @@ public class SuperRealmRecyclerView extends FrameLayout {
      *
      * @param adapter
      */
-    public void setAdapter(RecyclerView.Adapter adapter) {
+    public void setAdapter(final RealmRecyclerViewAdapter adapter) {
+
+        //setup footer view
+        if (adapter != null && adapter.getLoadMoreType() == loadMoreLayoutType.FOOTER) {
+            adapter.setLoadMoreView(mMoreProgressView);
+        }
+
         mRecycler.setAdapter(adapter);
         mProgress.setVisibility(View.GONE);
         mRecycler.setVisibility(View.VISIBLE);
@@ -316,7 +321,7 @@ public class SuperRealmRecyclerView extends FrameLayout {
                     mProgress.setVisibility(View.GONE);
                     isLoadingMore = false;
                     mPtrLayout.setRefreshing(false);
-                    if (mRecycler.getAdapter().getItemCount() == 0 && mEmptyId != 0) {
+                    if (adapter.getRealmItemCount() == 0 && mEmptyId != 0) {
                         mEmpty.setVisibility(View.VISIBLE);
                     } else if (mEmptyId != 0) {
                         mEmpty.setVisibility(View.GONE);
@@ -325,7 +330,7 @@ public class SuperRealmRecyclerView extends FrameLayout {
             });
 
         }
-        if ((adapter == null || adapter.getItemCount() == 0) && mEmptyId != 0) {
+        if ((adapter == null || adapter.getRealmItemCount() == 0) && mEmptyId != 0) {
             mEmpty.setVisibility(View.VISIBLE);
         }
     }
@@ -384,10 +389,15 @@ public class SuperRealmRecyclerView extends FrameLayout {
         return mEmptyView;
     }
 
-    public enum LAYOUT_MANAGER_TYPE {
+    private enum LAYOUT_MANAGER_TYPE {
         LINEAR,
         GRID,
         STAGGERED_GRID
+    }
+
+    public enum loadMoreLayoutType {
+        OVERLAY,
+        FOOTER
     }
 
     public interface OnMoreListener {
