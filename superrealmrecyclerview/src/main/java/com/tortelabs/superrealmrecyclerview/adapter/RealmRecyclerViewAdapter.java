@@ -3,6 +3,7 @@ package com.tortelabs.superrealmrecyclerview.adapter;
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -23,7 +24,8 @@ public abstract class RealmRecyclerViewAdapter<T extends RealmObject> extends Re
     Context context;
     RealmResults<T> realmResults;
     SuperRealmRecyclerView.loadMoreLayoutType loadMoreType;
-    private View loadMoreView;
+    private int loadMoreViewId;
+    private boolean isLoadMoreShown = false;
 
     public RealmRecyclerViewAdapter(Context context,
                                     RealmResults<T> realmResults,
@@ -32,49 +34,56 @@ public abstract class RealmRecyclerViewAdapter<T extends RealmObject> extends Re
         this.context = context;
         this.realmResults = realmResults;
         this.mListener = automaticUpdate ? getRealmListener() : null;
+        if (mListener != null)
+            realmResults.addChangeListener(getRealmListener());
         this.loadMoreType = loadMoreType;
     }
 
     public RealmRecyclerViewAdapter(Context context,
                                     RealmResults<T> realmResults,
                                     boolean automaticUpdate) {
-        this.context = context;
-        this.realmResults = realmResults;
-        this.mListener = automaticUpdate ? getRealmListener() : null;
-        this.loadMoreType = SuperRealmRecyclerView.loadMoreLayoutType.FOOTER;
+        this(context, realmResults, automaticUpdate, SuperRealmRecyclerView.loadMoreLayoutType.OVERLAY);
     }
 
     @Override
     public final RealmViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         if (viewType == LOAD_MORE_VIEW_TYPE) {
-            if (loadMoreView == null) {
+            if (loadMoreViewId == 0) {
                 throw new IllegalStateException(
                         "Load More View cannot be null. " +
                                 "Don't set the adapter using SuperRealmRecyclerView.getRecyclerView().getAdapter(). " +
                                 "Always use SuperRecyclerView.getAdapter()");
             }
-            return new RealmViewHolder(loadMoreView);
+            View v = LayoutInflater.from(context).inflate(loadMoreViewId, parent, false);
+            return new RealmViewHolder(v);
         }
         return onCreateRealmViewHolder(parent, viewType);
     }
 
     @Override
     public final void onBindViewHolder(RealmViewHolder holder, int position) {
-        if (loadMoreType == SuperRealmRecyclerView.loadMoreLayoutType.FOOTER && position == getItemCount()) {
+        if (loadMoreType == SuperRealmRecyclerView.loadMoreLayoutType.FOOTER && position == getItemCount() - 1) {
             // staggered layout set full span
 
             if (holder.itemView.getLayoutParams() instanceof StaggeredGridLayoutManager.LayoutParams) {
                 StaggeredGridLayoutManager.LayoutParams layoutParams = (StaggeredGridLayoutManager.LayoutParams) holder.itemView.getLayoutParams();
                 layoutParams.setFullSpan(true);
             }
+
+            if (isLoadMoreShown) {
+                holder.itemView.setVisibility(View.VISIBLE);
+            } else {
+                holder.itemView.setVisibility(View.GONE);
+            }
+
             return;
         }
         onBindRealmViewHolder(holder, position);
     }
 
-    public abstract RealmViewHolder onCreateRealmViewHolder(ViewGroup viewGroup, int viewType);
+    public abstract RealmViewHolder onCreateRealmViewHolder(ViewGroup parent, int viewType);
 
-    public abstract void onBindRealmViewHolder(RealmViewHolder holder, int position);
+    public abstract void onBindRealmViewHolder(RealmViewHolder viewHolder, int position);
 
     public abstract int getRealmItemCount();
 
@@ -124,7 +133,7 @@ public abstract class RealmRecyclerViewAdapter<T extends RealmObject> extends Re
 
     @Override
     public final int getItemViewType(int position) {
-        if (loadMoreType == SuperRealmRecyclerView.loadMoreLayoutType.FOOTER && position == getItemCount()) {
+        if (loadMoreType == SuperRealmRecyclerView.loadMoreLayoutType.FOOTER && position == getItemCount() - 1) {
             return LOAD_MORE_VIEW_TYPE;
         } else {
             return getRealmItemViewType(position);
@@ -135,7 +144,17 @@ public abstract class RealmRecyclerViewAdapter<T extends RealmObject> extends Re
         return loadMoreType;
     }
 
-    public void setLoadMoreView(View loadMoreView) {
-        this.loadMoreView = loadMoreView;
+    public void setLoadMoreView(int loadMoreViewId) {
+        this.loadMoreViewId = loadMoreViewId;
+    }
+
+    public void showLoadMoreView() {
+        isLoadMoreShown = true;
+        notifyItemChanged(getItemCount());
+    }
+
+    public void hideLoadMoreView() {
+        isLoadMoreShown = false;
+        notifyItemChanged(getItemCount());
     }
 }

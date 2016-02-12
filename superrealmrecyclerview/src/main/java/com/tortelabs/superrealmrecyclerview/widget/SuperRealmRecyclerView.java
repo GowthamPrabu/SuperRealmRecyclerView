@@ -129,6 +129,7 @@ public class SuperRealmRecyclerView extends FrameLayout {
 
         mRecycler.setClipToPadding(mClipToPadding);
         RecyclerView.OnScrollListener mInternalOnScrollListener = new RecyclerView.OnScrollListener() {
+            private int[] lastPositions;
 
             @Override
             public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
@@ -158,6 +159,24 @@ public class SuperRealmRecyclerView extends FrameLayout {
                     }
                 }
 
+
+                switch (layoutManagerType) {
+                    case LINEAR:
+                        lastVisibleItemPosition = ((LinearLayoutManager) layoutManager).findLastVisibleItemPosition();
+                        break;
+                    case GRID:
+                        lastVisibleItemPosition = ((GridLayoutManager) layoutManager).findLastVisibleItemPosition();
+                        break;
+                    case STAGGERED_GRID:
+                        StaggeredGridLayoutManager staggeredGridLayoutManager = (StaggeredGridLayoutManager) layoutManager;
+                        if (lastPositions == null)
+                            lastPositions = new int[staggeredGridLayoutManager.getSpanCount()];
+
+                        staggeredGridLayoutManager.findLastVisibleItemPositions(lastPositions);
+                        lastVisibleItemPosition = findMax(lastPositions);
+                        break;
+                }
+
                 if (((totalItemCount - lastVisibleItemPosition) <= ITEM_LEFT_TO_LOAD_MORE ||
                         (totalItemCount - lastVisibleItemPosition) == 0 && totalItemCount > visibleItemCount)
                         && !isLoadingMore) {
@@ -165,7 +184,7 @@ public class SuperRealmRecyclerView extends FrameLayout {
                     isLoadingMore = true;
                     if (mOnMoreListener != null) {
                         showMoreProgress();
-                        mOnMoreListener.onMoreAsked(((RealmRecyclerViewAdapter)mRecycler.getAdapter()).getRealmItemCount(), ITEM_LEFT_TO_LOAD_MORE, lastVisibleItemPosition);
+                        mOnMoreListener.onMoreAsked(((RealmRecyclerViewAdapter) mRecycler.getAdapter()).getRealmItemCount(), ITEM_LEFT_TO_LOAD_MORE, lastVisibleItemPosition);
 
                     }
                 }
@@ -222,10 +241,24 @@ public class SuperRealmRecyclerView extends FrameLayout {
     }
 
     public void showMoreProgress() {
+        RealmRecyclerViewAdapter adapter = getAdapter();
+        if (adapter!= null) {
+            if (adapter.getLoadMoreType() == loadMoreLayoutType.FOOTER) {
+                adapter.showLoadMoreView();
+                return;
+            }
+        }
         mMoreProgress.setVisibility(View.VISIBLE);
     }
 
     public void hideMoreProgress() {
+        RealmRecyclerViewAdapter adapter = getAdapter();
+        if (adapter!= null) {
+            if (adapter.getLoadMoreType() == loadMoreLayoutType.FOOTER) {
+                adapter.hideLoadMoreView();
+                return;
+            }
+        }
         mMoreProgress.setVisibility(View.GONE);
     }
 
@@ -263,7 +296,12 @@ public class SuperRealmRecyclerView extends FrameLayout {
     }
 
     public RealmRecyclerViewAdapter getAdapter() {
-        return (RealmRecyclerViewAdapter) mRecycler.getAdapter();
+        if (mRecycler == null)
+            return null;
+        if (mRecycler.getAdapter() != null)
+            return (RealmRecyclerViewAdapter) mRecycler.getAdapter();
+        else
+            return null;
     }
 
     /**
@@ -278,7 +316,7 @@ public class SuperRealmRecyclerView extends FrameLayout {
 
         //setup footer view
         if (adapter != null && adapter.getLoadMoreType() == loadMoreLayoutType.FOOTER) {
-            adapter.setLoadMoreView(mMoreProgressView);
+            adapter.setLoadMoreView(mMoreProgressId);
         }
 
         mRecycler.setAdapter(adapter);

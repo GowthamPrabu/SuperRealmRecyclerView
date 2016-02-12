@@ -11,9 +11,17 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/colorPrimary"
-        android:title="@string/app_name"
         android:elevation="2dp"
+        android:title="@string/app_name"
         app:title="@string/app_name"
         tools:targetApi="lollipop" />
+
+    <com.tortelabs.superrealmrecyclerview.widget.SuperRealmRecyclerView
+        android:id="@+id/SuperRealmRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:realm_layout_empty="@layout/empty_layout"
+        app:realm_layout_moreProgress="@layout/more_progress_layout"
+        app:realm_layout_progress="@layout/progress_layout" />
 
 </LinearLayout>
